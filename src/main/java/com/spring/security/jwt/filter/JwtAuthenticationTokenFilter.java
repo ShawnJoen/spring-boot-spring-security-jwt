@@ -1,8 +1,8 @@
 package com.spring.security.jwt.filter;
 
-import com.spring.security.jwt.service.impl.JwtUserDetailsServiceImpl;
-import com.spring.security.jwt.util.JwtTokenUtil;
+import com.spring.security.jwt.security.util.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,21 +16,25 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+import static com.spring.security.jwt.config.WebSecurityConfig.AUTHENTICATION_HEADER_NAME;
+import static com.spring.security.jwt.config.WebSecurityConfig.HEADER_PREFIX;
+
 @Slf4j
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
     private UserDetailsService userDetailsService;
     private JwtTokenUtil jwtTokenUtil;
 
-    public JwtAuthenticationTokenFilter() {
-        this.userDetailsService = getUserDetailsService();
+    @Autowired
+    public JwtAuthenticationTokenFilter(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
         this.jwtTokenUtil = getJwtTokenUtil();
     }
 
-    @Bean
-    public UserDetailsService getUserDetailsService() {
-        return new JwtUserDetailsServiceImpl();
-    }
+//    @Bean
+//    public UserDetailsService getUserDetailsService() {
+//        return new JwtUserDetailsServiceImpl();
+//    }
 
     @Bean
     public JwtTokenUtil getJwtTokenUtil() {
@@ -41,11 +45,10 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain)
             throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-        final String tokenHead = "Shawn ";
-        if (authHeader != null && authHeader.startsWith(tokenHead)) {
+        final String authHeader = request.getHeader(AUTHENTICATION_HEADER_NAME);
+        if (authHeader != null && authHeader.startsWith(HEADER_PREFIX)) {
 
-            final String authToken = authHeader.substring(tokenHead.length());
+            final String authToken = authHeader.substring(HEADER_PREFIX.length());
             final String username = this.jwtTokenUtil.getUsernameFromToken(authToken);
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 

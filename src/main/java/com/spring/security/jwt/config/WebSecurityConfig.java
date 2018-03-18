@@ -1,8 +1,6 @@
 package com.spring.security.jwt.config;
 
-import com.spring.security.jwt.filter.JwtAuthenticationTokenFilter;
-import com.spring.security.jwt.handler.UserAuthenticationFailureHandler;
-import com.spring.security.jwt.handler.UserAuthenticationSuccessHandler;
+import com.spring.security.jwt.security.handler.RestAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,18 +12,19 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import javax.servlet.Filter;
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Autowired
-    private UserDetailsService userDetailsService;
+    public static final String AUTHENTICATION_HEADER_NAME = "Authorization";
+    public static final String HEADER_PREFIX = "Bearer ";
+
+    @Autowired private UserDetailsService userDetailsService;
+    @Autowired private RestAuthenticationEntryPoint authenticationEntryPoint;
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -33,23 +32,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public Filter jwtAuthenticationTokenFilter() {
-        return new JwtAuthenticationTokenFilter();
-    }
-
-    @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationFailureHandler authenticationFailureHandler() {
-        return new UserAuthenticationFailureHandler();
-    }
-
-    @Bean
-    public AuthenticationSuccessHandler authenticationSuccessHandler() {
-        return new UserAuthenticationSuccessHandler();
     }
 
     /*
@@ -64,19 +48,73 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
-    protected void configure(HttpSecurity httpSecurity) throws Exception {
+    protected void configure(final HttpSecurity httpSecurity) throws Exception {
+        //不做验证的Url
+        final List<String> permitAllEndpointList = Arrays.asList("/static/**", "/view/**", "/user/**");
+        //验证的Url
+        //List<String> validateEndpointList = Arrays.asList("/api/**", "/**");
+        final String validateEndpointList = "/**";
+
         httpSecurity
                 .csrf().disable()//关闭csrf验证
-                //基于token，使用无状态的Session机制(即Spring不使用HTTPSession)
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                //加权限不足,身份验证失败的 返回值处理
+                .exceptionHandling()
+                    .authenticationEntryPoint(this.authenticationEntryPoint)//身份验证失败
                 .and()
-                .authorizeRequests()
-                .antMatchers("/static/**", "/view/**", "/user/**").permitAll()//不做验证指定的Url请求
-                .anyRequest().authenticated();//所有请求需要身份验证
-
-        httpSecurity.headers().cacheControl();
-
-        //添加一个过滤器验证Token是否合法
-        httpSecurity.addFilterBefore(jwtAuthenticationTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+                    //基于token，使用无状态的Session机制(即Spring不使用HTTPSession)
+                    .sessionManagement()
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                    .authorizeRequests()
+                    .antMatchers(permitAllEndpointList.toArray(new String[permitAllEndpointList.size()]))
+                    .permitAll()
+                    //所有请求需要身份验证
+                    //.anyRequest().authenticated()
+                .and()
+                    .authorizeRequests()
+                    //.antMatchers(validateEndpointList.toArray(new String[validateEndpointList.size()]))
+                    .antMatchers(validateEndpointList)
+                    .authenticated()
+                .and()
+//                    .addFilterBefore(buildJwtTokenAuthenticationProcessingFilter(
+//                                permitAllEndpointList,
+//                                validateEndpointList
+//                        ), UsernamePasswordAuthenticationFilter.class);
+                    //禁用缓存
+                    .headers().cacheControl();
     }
+
+//    @Autowired private JwtAuthenticationProvider jwtAuthenticationProvider;
+//    @Autowired private TokenExtractor tokenExtractor;
+//    @Autowired private AuthenticationManager authenticationManager;
+//
+//    protected JwtTokenAuthenticationProcessingFilter buildJwtTokenAuthenticationProcessingFilter(List<String> pathsToSkip, String pattern)
+//            throws Exception {
+//        SkipPathRequestMatcher matcher = new SkipPathRequestMatcher(pathsToSkip, pattern);
+//        JwtTokenAuthenticationProcessingFilter filter = new JwtTokenAuthenticationProcessingFilter(tokenExtractor, matcher);//failureHandler, tokenExtractor, matcher
+//        filter.setAuthenticationManager(this.authenticationManager);
+//        return filter;
+//    }
+
+//    @Bean
+//    @Override
+//    public AuthenticationManager authenticationManagerBean() throws Exception {
+//        return super.authenticationManagerBean();
+//    }
+//
+//    @Override
+//    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+//        auth.authenticationProvider(jwtAuthenticationProvider);
+//    }
+
+//    private SkipPathRequestMatcher skipPathRequestMatcher() {
+//        return new SkipPathRequestMatcher(Arrays.asList(LOGIN_END_POINT, TOKEN_END_POINT));
+//    }
+//
+//    public JwtAuthenticationFilter jwtAuthenticationFilter() throws Exception {
+//        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(skipPathRequestMatcher());
+//        filter.setAuthenticationManager(authenticationManager());
+//        filter.setAuthenticationFailureHandler(securityHandler);
+//        return filter;
+//    }
 }

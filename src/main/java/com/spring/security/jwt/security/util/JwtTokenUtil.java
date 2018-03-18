@@ -1,13 +1,17 @@
-package com.spring.security.jwt.util;
+package com.spring.security.jwt.security.util;
 
 import com.spring.security.jwt.domain.JwtUser;
+import com.spring.security.jwt.security.config.JwtSettings;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,10 +20,8 @@ import java.util.Map;
 @Component
 public class JwtTokenUtil implements Serializable {
 
-    /**
-     * 密钥
-     */
-    private final String secretKey = "ShawnsSecret";
+    @Autowired
+    private JwtSettings jwtSettings;
 
     /**
      * 从数据声明生成令牌
@@ -27,11 +29,17 @@ public class JwtTokenUtil implements Serializable {
      * @return 令牌
      */
     private String generateToken(final Map<String, Object> claims) {
-        Date expirationDate = new Date(System.currentTimeMillis() + 60 * 1000 * 15);//过期时间 毫秒单位
         return Jwts.builder()
                 .setClaims(claims)
-                .setExpiration(expirationDate)
-                .signWith(SignatureAlgorithm.HS512, secretKey)
+                .setIssuer(jwtSettings.getTokenIssuer())
+                .setIssuedAt(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()))
+                .setExpiration(Date.from(
+                        LocalDateTime.now()
+                        .plusMinutes(jwtSettings.getTokenExpirationTime())
+                        .atZone(ZoneId.systemDefault()).toInstant()
+                    )
+                )
+                .signWith(SignatureAlgorithm.HS512, jwtSettings.getTokenSigningKey())
                 .compact();
     }
 
@@ -43,7 +51,7 @@ public class JwtTokenUtil implements Serializable {
     private Claims getClaimsFromToken(final String token) {
         try {
             return Jwts.parser()
-                    .setSigningKey(secretKey)
+                    .setSigningKey(jwtSettings.getTokenSigningKey())
                     .parseClaimsJws(token)
                     .getBody();
         } catch (Exception e) {

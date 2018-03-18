@@ -4,7 +4,7 @@ import com.spring.security.jwt.domain.CurrentUser;
 import com.spring.security.jwt.domain.User;
 import com.spring.security.jwt.repository.UserDao;
 import com.spring.security.jwt.service.UserService;
-import com.spring.security.jwt.util.JwtTokenUtil;
+import com.spring.security.jwt.security.util.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
