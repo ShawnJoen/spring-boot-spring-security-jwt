@@ -22,24 +22,10 @@ import static com.spring.security.jwt.config.WebSecurityConfig.HEADER_PREFIX;
 @Slf4j
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
-    private UserDetailsService userDetailsService;
-    private JwtTokenUtil jwtTokenUtil;
+    @Autowired private UserDetailsService userDetailsService;
+    @Autowired private JwtTokenUtil jwtTokenUtil;
 
-    @Autowired
-    public JwtAuthenticationTokenFilter(UserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
-        this.jwtTokenUtil = getJwtTokenUtil();
-    }
-
-//    @Bean
-//    public UserDetailsService getUserDetailsService() {
-//        return new JwtUserDetailsServiceImpl();
-//    }
-
-    @Bean
-    public JwtTokenUtil getJwtTokenUtil() {
-        return new JwtTokenUtil();
-    }
+    public JwtAuthenticationTokenFilter() {}
 
     @Override
     protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain)

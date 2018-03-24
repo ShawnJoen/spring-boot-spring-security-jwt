@@ -15,21 +15,14 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@Service
+//@Service
 public class JwtUserDetailsServiceImpl implements UserDetailsService {
 
-    private UserDao userDao;
-    private RedisTemplate redisTemplate;
-    private JwtSettings jwtSettings;
+    @Autowired private UserDao userDao;
+    @Autowired private RedisTemplate redisTemplate;
+    @Autowired private JwtSettings jwtSettings;
 
     public JwtUserDetailsServiceImpl() {}
-
-    @Autowired
-    public JwtUserDetailsServiceImpl(UserDao userDao, RedisTemplate redisTemplate, JwtSettings jwtSettings) {
-        this.userDao = userDao;
-        this.redisTemplate = redisTemplate;
-        this.jwtSettings = jwtSettings;
-    }
     /*
     * 在Service
     *   @Autowired

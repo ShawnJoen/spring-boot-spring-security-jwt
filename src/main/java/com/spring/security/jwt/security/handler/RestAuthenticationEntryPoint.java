@@ -15,6 +15,7 @@ import java.io.IOException;
 @Slf4j
 @Component
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
+    public RestAuthenticationEntryPoint() {}
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException e)
             throws IOException {
