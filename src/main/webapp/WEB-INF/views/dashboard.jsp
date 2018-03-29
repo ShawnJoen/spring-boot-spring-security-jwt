@@ -9,5 +9,7 @@ pageEncoding="utf8"%><!DOCTYPE html><html lang="zh-CN">
 
 <b>dashboard</b>
 
+Security Username:${username}
+
 </body>
 </html>
